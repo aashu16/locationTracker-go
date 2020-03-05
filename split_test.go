@@ -1,12 +1,16 @@
 package main
 
 import (
+	"log"
 	"strings"
 	"testing"
+
+	"github.com/jmoiron/sqlx"
 )
 
 var input string = "14,41"
 var result []string
+var form *Response
 
 func BenchmarkSplitStringToNothing(b *testing.B) {
 	b.ReportAllocs()
@@ -40,4 +44,21 @@ func BenchmarkSplitStringToArray(b *testing.B) {
 		splitString = strings.Split(input, ",")
 	}
 	result = splitString
+}
+
+func BenchmarkGinRoute(b *testing.B) {
+	b.ReportAllocs()
+
+	db, err := sqlx.Connect("pgx", "user=postgres password=postgres dbname=entrysport sslmode=disable")
+	if err != nil {
+		log.Fatalln("Cannot connect to database...")
+	}
+	var env = &Env{db: db}
+
+	var forms *Response
+
+	for n := 0; n < b.N; n++ {
+		forms = env.getForm()
+	}
+	form = forms
 }
