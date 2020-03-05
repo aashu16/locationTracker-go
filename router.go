@@ -30,7 +30,7 @@ func (env *Env) CreateRouter() *gin.Engine {
 
 	r.POST("/form", env.enterForm)
 
-	// r.GET("/form", env.getForm)
+	r.GET("/form", env.getForm)
 
 	return r
 }
@@ -115,11 +115,6 @@ func (e *Env) enterForm(c *gin.Context) {
 		fmt.Println("Cannot marshal JSON...")
 	}
 
-	//if err := formJSON.UnmarshalJSON([]byte(preparedJSON)); err != nil {
-	//fmt.Println("Cannot get JSON from request...", err)
-	//}
-	//fmt.Println(formJSON)
-
 	result, err := e.db.Exec("INSERT INTO event_test (event_links) VALUES ($1)", preparedJSON)
 	if err != nil {
 		fmt.Println("Cannot insert form into database", err)
@@ -127,12 +122,7 @@ func (e *Env) enterForm(c *gin.Context) {
 	fmt.Println(result)
 }
 
-type Uid struct {
-	Uid string `form:"uid"`
-}
-
-// func (e *Env) getForm(c *gin.Context) {
-func (e *Env) getForm() *Response {
+func (e *Env) getForm(c *gin.Context) {
 	type Formtype struct {
 		Uid      uuid.UUID      `db:"event_uid"`
 		FormJSON types.JSONText `db:"fields"`
@@ -142,7 +132,6 @@ func (e *Env) getForm() *Response {
 	if err := e.db.Select(&forms, "SELECT event_uid, event_links -> 'fields' AS fields FROM event_test"); err != nil {
 		fmt.Println("Cannot fetch form from database", err)
 	}
-	fmt.Printf("%v", forms)
 
 	var Form = make([]Forms, len(forms))
 
@@ -153,17 +142,5 @@ func (e *Env) getForm() *Response {
 		}
 	}
 
-	// if err := json.Unmarshal([]byte(fmt.Sprintf("%v", formJSON)), &form); err != nil {
-	// 	fmt.Println("Cannot unmarshal JSON...", err)
-	// }
-
-	// for _, val := range formJSON {
-	// 	if err := json.Unmarshal([]byte(fmt.Sprintf("%v", val)), &single); err != nil {
-	// 		fmt.Println("Cannot unmarshal JSON...", err)
-	// 	}
-	// 	form = append(form, single)
-	// }
-
-	return &Response{Payload: Form}
-	// c.JSON(http.StatusOK, &Response{Payload: Form})
+	c.JSON(http.StatusOK, &Response{Payload: Form})
 }
